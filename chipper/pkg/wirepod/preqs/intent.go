@@ -43,6 +43,12 @@ func (s *Server) ProcessIntent(req *vtt.IntentRequest) (*vtt.IntentResponse, err
 		return nil, nil
 	}
 	if !successMatched {
+		// EpicOS agent bridge (additive fallback). Legacy streams cannot
+		// speak freeform text, so tryEpicOS yields to native here unless a
+		// future upstream adds that capability.
+		if s.tryEpicOS(req, req.Device, transcribedText) {
+			return nil, nil
+		}
 		if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
 			logger.Println("Making LLM request for device " + req.Device + "...")
 			_, err := ttr.StreamingKGSim(req, req.Device, transcribedText, false)

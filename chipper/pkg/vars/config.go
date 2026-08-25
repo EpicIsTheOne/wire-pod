@@ -41,6 +41,14 @@ type apiConfig struct {
 		Service  string `json:"provider"`
 		Language string `json:"language"`
 	} `json:"STT"`
+	EpicOS struct {
+		// Enable routes unmatched speech to a local EpicOS agent server
+		// before any other fallback. No secrets live here — EpicOS holds
+		// its own model credentials.
+		Enable    bool   `json:"enable"`
+		URL       string `json:"url"`
+		TimeoutMS int    `json:"timeoutms"`
+	} `json:"epicos"`
 	Server struct {
 		// false for ip, true for escape pod
 		EPConfig bool   `json:"epconfig"`

@@ -60,6 +60,11 @@ func (s *Server) ProcessIntentGraph(req *vtt.IntentGraphRequest) (*vtt.IntentGra
 	// 	return nil, nil
 	// }
 	if !successMatched {
+		// EpicOS agent bridge (additive fallback): unmatched text goes to the
+		// local EpicOS server before wire-pod's own knowledge/LLM fallback.
+		if s.tryEpicOS(req, req.Device, transcribedText) {
+			return nil, nil
+		}
 		if vars.APIConfig.Knowledge.IntentGraph && vars.APIConfig.Knowledge.Enable {
 			if vars.APIConfig.Knowledge.Provider == "houndify" {
 				if len([]rune(transcribedText)) >= 8 {
