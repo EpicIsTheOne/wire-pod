@@ -128,6 +128,38 @@ func TestNativeIntentBypassesEpicOS(t *testing.T) {
 	}
 }
 
+// TestNativeIntentsBypassMatrix extends the single bypass proof to a spread
+// of native utterance shapes (motion, clock, media, attention).
+func TestNativeIntentsBypassMatrix(t *testing.T) {
+	cases := []struct{ transcript, intent string }{
+		{"come here", "intent_motion_moveclose"},
+		{"what time is it", "intent_clock_time"},
+		{"play some music", "intent_play_anything"},
+		{"look at my face", "intent_face_attention"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.transcript, func(t *testing.T) {
+			setSTT(t, tc.transcript)
+			vars.IntentList = []vars.JsonIntent{
+				{Name: tc.intent, Keyphrases: []string{tc.transcript}, RequireExactMatch: false},
+			}
+			router := &fakeRouter{}
+			s := newTestServer(router)
+			stream := &fakeIGStream{}
+			if _, err := s.ProcessIntentGraph(graphRequest(stream)); err != nil {
+				t.Fatalf("ProcessIntentGraph: %v", err)
+			}
+			if n := router.callCount(); n != 0 {
+				t.Errorf("EpicOS called %d times for native match", n)
+			}
+			resps := stream.responses()
+			if len(resps) != 1 || resps[0].ResponseType != pb.IntentGraphMode_INTENT || resps[0].IntentResult.Action != tc.intent {
+				t.Errorf("native response wrong: %+v", resps)
+			}
+		})
+	}
+}
+
 func TestUnmatchedReachesEpicOSAndSpeaks(t *testing.T) {
 	setSTT(t, "look around and tell me what you notice")
 	vars.IntentList = nil
